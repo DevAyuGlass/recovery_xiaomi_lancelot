@@ -43,12 +43,17 @@ jobs:
           cd ~/fox_R11.1
           rm -f device/xiaomi/lancelot/vendorsetup.sh
           find device/ -maxdepth 3 -name "vendorsetup.sh" -delete || true
+          
           source build/envsetup.sh
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
-          lunch omni_lancelot-userdebug || lunch fox_lancelot-userdebug || lunch omni_lancelot-eng
+
+          # Добавляем lancelot в список комбо вручную перед lunch
+          add_lunch_combo omni_lancelot-userdebug || true
+
+          lunch omni_lancelot-userdebug || lunch omni_lancelot-eng
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
