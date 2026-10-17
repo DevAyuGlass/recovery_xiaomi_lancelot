@@ -38,17 +38,21 @@ jobs:
           mkdir -p device/xiaomi/lancelot
           cp -r $GITHUB_WORKSPACE/* device/xiaomi/lancelot/
 
-      - name: Build Recovery
-        run: |
-          cd ~/fox_R11.1
-          find device/ -maxdepth 3 -name "vendorsetup.sh" ! -path "*lancelot*" -delete || true
-          source build/envsetup.sh
-          export ALLOW_MISSING_DEPENDENCIES=true
-          export FOX_USE_NANO_EDITOR=true
-          export TARGET_SCREEN_HEIGHT=2340
-          export TARGET_SCREEN_WIDTH=1080
-          lunch omni_lancelot-userdebug  lunch fox_lancelot-userdebug  lunch omni_lancelot-eng
-          mka recoveryimage -j$(nproc)
+- name: Build Recovery
+     run: |
+       cd ~/fox_R11.1
+       # Удаляем vendorsetup.sh везде, включая lancelot, чтобы избавиться от ошибки add_lunch_combo
+       rm -f device/xiaomi/lancelot/vendorsetup.sh
+       find device/ -maxdepth 3 -name "vendorsetup.sh" -delete || true
+
+       source build/envsetup.sh
+       export ALLOW_MISSING_DEPENDENCIES=true
+       export FOX_USE_NANO_EDITOR=true
+       export TARGET_SCREEN_HEIGHT=2340
+       export TARGET_SCREEN_WIDTH=1080
+
+       lunch omni_lancelot-userdebug  lunch fox_lancelot-userdebug  lunch omni_lancelot-eng
+       mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
         uses: actions/upload-artifact@v4
