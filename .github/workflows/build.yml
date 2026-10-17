@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -33,10 +34,11 @@ jobs:
 
       - name: Import Device Tree
         run: |
-          mkdir -p ~/fox_R11.1/device/xiaomi/lancelot
-          cp -r $GITHUB_WORKSPACE/* ~/fox_R11.1/device/xiaomi/lancelot/
+          cd ~/fox_R11.1
+          mkdir -p device/xiaomi/lancelot
+          cp -r $GITHUB_WORKSPACE/* device/xiaomi/lancelot/
 
-- name: Build Recovery
+      - name: Build Recovery
         run: |
           cd ~/fox_R11.1
           find device/ -maxdepth 3 -name "vendorsetup.sh" ! -path "*lancelot*" -delete || true
