@@ -48,7 +48,7 @@ jobs:
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
-          lunch omni_lancelot-userdebug  lunch fox_lancelot-userdebug  lunch omni_lancelot-eng
+          lunch omni_lancelot-userdebug || lunch fox_lancelot-userdebug || lunch omni_lancelot-eng
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
