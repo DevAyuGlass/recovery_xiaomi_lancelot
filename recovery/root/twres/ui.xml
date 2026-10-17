@@ -1,0 +1,188 @@
+<theme>
+    <!-- Подключение шрифтов Google Sans -->
+    <fonts>
+        <font name="GS_Header" filename="fonts/GoogleSans-Bold.ttf" size="52" default="true" />
+        <font name="GS_Button" filename="fonts/GoogleSans-Bold.ttf" size="38" />
+        <font name="GS_Body" filename="fonts/GoogleSans-Regular.ttf" size="32" />
+        <font name="GS_Small" filename="fonts/GoogleSans-Medium.ttf" size="26" />
+        <font name="GS_Mono" filename="fonts/GoogleSans-Regular.ttf" size="24" />
+    </fonts>
+
+    <!-- ГЛОБАЛЬНЫЙ СТАТУС-БАР И ДОК (Отображаются на ключевых экранах) -->
+
+    <!-- ================= ГЛАВНЫЙ ЭКРАН (main) ================= -->
+    <window name="main">
+        <background color="#0B0B0E"/>
+
+        <!-- Статус-бар iOS -->
+        <object type="text">
+            <placement x="540" y="60" align="center"/>
+            <font resource="GS_Small"/>
+            <text color="#EBEBF5">%tw_time%</text>
+        </object>
+        <object type="text">
+            <placement x="980" y="60" align="right"/>
+            <font resource="GS_Small"/>
+            <text color="#8E8E93">%tw_battery% %</text>
+        </object>
+
+        <!-- Заголовок -->
+        <object type="text">
+            <placement x="60" y="160"/>
+            <font resource="GS_Header"/>
+            <text color="#FFFFFF">Si-Phone</text>
+        </object>
+        <object type="text">
+            <placement x="60" y="220"/>
+            <font resource="GS_Small"/>
+            <text color="#8E8E93">Redmi 9 (lancelot) • iOS Edition</text>
+        </object>
+
+        <!-- Меню-карточки -->
+        <object type="button">
+            <placement x="40" y="320" w="1000" h="130"/>
+            <font resource="GS_Button"/>
+            <text color="#0A84FF">Установка (Install)</text>
+            <action function="page">install</action>
+        </object>
+
+        <object type="button">
+            <placement x="40" y="480" w="1000" h="130"/>
+            <font resource="GS_Button"/>
+            <text color="#FF453A">Очистка (Wipe)</text>
+            <action function="page">wipe</action>
+        </object>
+
+        <object type="button">
+            <placement x="40" y="640" w="1000" h="130"/>
+            <font resource="GS_Button"/>
+            <text color="#30D158">Бэкап NVRAM / EFS</text>
+            <action function="set">tw_backup_list=/nvram;/nvdata;/nvcfg</action>
+            <action function="page">do_backup</action>
+        </object>
+
+        <object type="button">
+            <placement x="40" y="800" w="1000" h="130"/>
+            <font resource="GS_Button"/>
+            <text color="#FF9F0A">Скрипты и Утилиты</text>
+            <action function="page">siphone_scripts</action>
+        </object>
+
+        <!-- Нижний Dock навигации -->
+        <object type="fill">
+            <placement x="0" y="2160" w="1080" h="180"/>
+            <color color="#161618"/>
+        </object>
+        <object type="button">
+            <placement x="90" y="2200" w="220" h="100"/>
+            <font resource="GS_Small"/>
+            <text color="#0A84FF">Главная</text>
+            <action function="page">main</action>
+        </object>
+        <object type="button">
+            <placement x="430" y="2200" w="220" h="100"/>
+            <font resource="GS_Small"/>
+            <text color="#8E8E93">Консоль</text>
+            <action function="page">console</action>
+        </object>
+        <object type="button">
+            <placement x="770" y="2200" w="220" h="100"/>
+            <font resource="GS_Small"/>
+            <text color="#8E8E93">Питание</text>
+            <action function="page">reboot</action>
+        </object>
+    </window>
+
+
+<!-- ================= ЭКРАН СКРИПТОВ (siphone_scripts) ================= -->
+    <window name="siphone_scripts">
+        <background color="#0B0B0E"/>
+
+        <object type="text">
+            <placement x="60" y="120"/>
+            <font resource="GS_Header"/>
+            <text color="#FFFFFF">Si-Phone Kit</text>
+        </object>
+        <object type="text">
+            <placement x="60" y="180"/>
+            <font resource="GS_Small"/>
+            <text color="#8E8E93">Набор утилит и реанимация системы</text>
+        </object>
+
+        <!-- 1. Установка / Удаление Root -->
+        <object type="button">
+            <placement x="40" y="260" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#30D158">Установить Root (Magisk)</text>
+            <action function="cmd">/sbin/magisk_install.sh</action>
+        </object>
+
+        <!-- 2. Сброс пароля экрана блокировки -->
+        <object type="button">
+            <placement x="40" y="400" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#0A84FF">Сбросить пароль / PIN экрана</text>
+            <action function="cmd">rm -rf /data/system/locksettings.db /data/system/gatekeeper.*</action>
+        </object>
+
+        <!-- 3. Отключение модулей Magisk при Bootloop -->
+        <object type="button">
+            <placement x="40" y="540" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#FF9F0A">Оживить при Bootloop (Disable Magisk Modules)</text>
+            <action function="cmd">rm -rf /data/adb/modules/*</action>
+        </object>
+
+        <!-- 4. Фикс раздела /data и шифрования -->
+        <object type="button">
+            <placement x="40" y="680" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#FF453A">Исправить шифрование /data</text>
+            <action function="cmd">umount /data; mke2fs -t ext4 /dev/block/by-name/userdata</action>
+        </object>
+
+        <!-- 5. Переход в Fastbootd -->
+        <object type="button">
+            <placement x="40" y="820" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#BF5AF2">Перезагрузить в Fastbootd</text>
+            <action function="set">tw_reboot_target=fastboot</action>
+            <action function="page">reboot</action>
+        </object>
+
+        <!-- Кнопка «Назад» -->
+        <object type="button">
+            <placement x="40" y="2000" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#FFFFFF">Назад в меню</text>
+            <action function="page">main</action>
+        </object>
+    </window>
+
+    <!-- ================= ЭКРАН КОНСОЛИ (console) ================= -->
+    <window name="console">
+        <background color="#121212"/>
+
+        <object type="text">
+            <placement x="60" y="80"/>
+            <font resource="GS_Button"/>
+            <text color="#FFFFFF">Системный лог</text>
+        </object>
+
+        <!-- Область вывода текста команд/логов -->
+        <object type="console">
+            <placement x="40" y="160" w="1000" h="1950"/>
+            <font resource="GS_Mono"/>
+            <text color="#30D158"/>
+        </object>
+
+        <!-- Кнопка возврата -->
+        <object type="button">
+            <placement x="40" y="2150" w="1000" h="120"/>
+            <font resource="GS_Button"/>
+            <text color="#0A84FF">В меню</text>
+            <action function="page">main</action>
+        </object>
+    </window>
+
+</theme>
