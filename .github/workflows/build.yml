@@ -55,7 +55,7 @@ jobs:
           # 2. Подгружаем функции сборки
           source build/envsetup.sh
 
-          # 3. Настраиваем переменные напрямую в обход lunch!
+          # 3. Настраиваем переменные напрямую
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
@@ -65,7 +65,11 @@ jobs:
           export TARGET_BUILD_VARIANT=userdebug
           export TARGET_BUILD_TYPE=release
 
-          # 4. Запускаем напрямую сборку targets
+          # Фикс паники release_config (trunk_staging)
+          export TARGET_RELEASE=trunk_staging
+          export DISABLE_RELEASE_CONFIGS=true
+
+          # 4. Запускаем сборку
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
