@@ -42,12 +42,8 @@ jobs:
         run: |
           cd ~/fox_R11.1
 
-          # 1. Подменяем ВСЕ бинарники release_config в исходниках AOSP
-          find prebuilts/ -name "release_config" -type f -exec rm -f {} \; -exec cp -f /bin/true {} \; || true
-          
-          # Если бинарник лежит в out/, перекрываем и его
-          mkdir -p out/soong/host/linux-x86/bin/
-          cp -f /bin/true out/soong/host/linux-x86/bin/release_config || true
+          # 1. Вырезаем подключение release_config из главного config.mk
+          sed -i '/release_config.mk/d' build/make/core/config.mk || true
 
           # 2. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
@@ -74,7 +70,6 @@ jobs:
 
           # 5. Запуск сборки
           make recoveryimage -j$(nproc)
-
       - name: Upload Recovery Artifact
         uses: actions/upload-artifact@v4
         with:
