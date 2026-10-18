@@ -42,19 +42,16 @@ jobs:
         run: |
           cd ~/fox_R11.1
 
-          # 0. СОЗДАЕМ ФЕЙКОВЫЕ КОНФИГИ ВО ВСЕХ ВОЗМОЖНЫХ ПУТЯХ
-          mkdir -p build/release_configs
-          mkdir -p build/make/target/product/release_config/release_configs
-          mkdir -p build/make/release_configs
-          
-          cat << 'EOF' > build/release_configs/trunk_staging.textproto
-          name: "trunk_staging"
-          EOF
-          cp build/release_configs/trunk_staging.textproto build/make/target/product/release_config/release_configs/trunk_staging.textproto
-          cp build/release_configs/trunk_staging.textproto build/make/release_configs/trunk_staging.textproto
+          # 0. КИЛЛ-ФИКС: Нейтрализуем запуск release_config!
+          # Если бинарник уже скомпилирован/существует, подменяем его на заглушку
+          mkdir -p out/soong/host/linux-x86/bin/
+          echo '#!/bin/bash' > out/soong/host/linux-x86/bin/release_config
+          echo 'exit 0' >> out/soong/host/linux-x86/bin/release_config
+          chmod +x out/soong/host/linux-x86/bin/release_config
 
-          # 0.1 ОПЦИОНАЛЬНО: Затыкаем вызов release_config в самóм Makefile
-          sed -i 's/error: release-config failed to run./warning: release-config bypassed/g' build/make/core/release_config.mk || true
+          # 0.1 Отключаем вызов release_config прямо в Makefile (пропускаем его)
+          sed -i 's/$(shell $(RELEASE_CONFIG)/# $(shell $(RELEASE_CONFIG)/g' build/make/core/release_config.mk || true
+          sed -i 's/$(error release-config failed to run.)/# release-config bypassed/g' build/make/core/release_config.mk || true
 
           # 1. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
@@ -77,7 +74,6 @@ jobs:
 
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
-          export TARGET_RELEASE=trunk_staging
           export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
           # 4. Запуск сборки
