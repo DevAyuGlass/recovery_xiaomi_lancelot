@@ -42,7 +42,14 @@ jobs:
         run: |
           cd ~/fox_R11.1
 
-          # 1. Зачищаем vendorsetup и создаем AndroidProducts.mk
+          # 1. Подменяем ВСЕ бинарники release_config в исходниках AOSP
+          find prebuilts/ -name "release_config" -type f -exec rm -f {} \; -exec cp -f /bin/true {} \; || true
+          
+          # Если бинарник лежит в out/, перекрываем и его
+          mkdir -p out/soong/host/linux-x86/bin/
+          cp -f /bin/true out/soong/host/linux-x86/bin/release_config || true
+
+          # 2. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
 
           sed -i 's|vendor/omni/config/common.mk|vendor/fox/config/common.mk|g' device/xiaomi/lancelot/omni_lancelot.mk || true
@@ -52,28 +59,10 @@ jobs:
           COMMON_LUNCH_CHOICES := omni_lancelot-userdebug
           EOF
 
-          # 2. Создаем ПОЛНЫЙ валидный конфиг для release_config во всех папках
-          mkdir -p build/release_configs
-          mkdir -p build/make/target/product/release_config/release_configs
-          
-          cat << 'EOF' > build/release_configs/trunk_staging.textproto
-          name: "trunk_staging"
-          value: "true"
-          EOF
-          
-          cp build/release_configs/trunk_staging.textproto build/make/target/product/release_config/release_configs/trunk_staging.textproto
-
-          # 3. Перехватываем вызов release_config через PATH (абсолютно безопасно)
-          mkdir -p ~/mock_bin
-          echo '#!/bin/bash' > ~/mock_bin/release_config
-          echo 'exit 0' >> ~/mock_bin/release_config
-          chmod +x ~/mock_bin/release_config
-          export PATH=~/mock_bin:$PATH
-
-          # 4. Подгружаем функции сборки
+          # 3. Подгружаем функции сборки
           source build/envsetup.sh
 
-          # 5. Переменные сборки
+          # 4. Переменные сборки
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
@@ -81,10 +70,9 @@ jobs:
 
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
-          export TARGET_RELEASE=trunk_staging
           export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
-          # 6. Запуск сборки
+          # 5. Запуск сборки
           make recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
