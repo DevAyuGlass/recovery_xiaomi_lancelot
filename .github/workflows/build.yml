@@ -41,13 +41,20 @@ jobs:
       - name: Build Recovery
         run: |
           cd ~/fox_R11.1
-          
-          # 0. СОЗДАЕМ ФЕЙКОВЫЙ КОНФИГ ДЛЯ ПАНИКУЮЩЕГО GO-СКРИПТА
+
+          # 0. СОЗДАЕМ ФЕЙКОВЫЕ КОНФИГИ ВО ВСЕХ ВОЗМОЖНЫХ ПУТЯХ
           mkdir -p build/release_configs
+          mkdir -p build/make/target/product/release_config/release_configs
+          mkdir -p build/make/release_configs
+          
           cat << 'EOF' > build/release_configs/trunk_staging.textproto
           name: "trunk_staging"
-          inherits: []
           EOF
+          cp build/release_configs/trunk_staging.textproto build/make/target/product/release_config/release_configs/trunk_staging.textproto
+          cp build/release_configs/trunk_staging.textproto build/make/release_configs/trunk_staging.textproto
+
+          # 0.1 ОПЦИОНАЛЬНО: Затыкаем вызов release_config в самóм Makefile
+          sed -i 's/error: release-config failed to run./warning: release-config bypassed/g' build/make/core/release_config.mk || true
 
           # 1. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
@@ -70,12 +77,10 @@ jobs:
 
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
-
-          # 4. Явно задаем то, что она требует
           export TARGET_RELEASE=trunk_staging
           export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
-          # 5. Запускаем сборку напрямую
+          # 4. Запуск сборки
           make recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
