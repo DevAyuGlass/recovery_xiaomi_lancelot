@@ -68,14 +68,13 @@ jobs:
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
-          export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
           set +e
           source build/envsetup.sh
           set -e
 
           lunch omni_lancelot-eng
-          mka adbd recoveryimage -j$(nproc)
+          mka adbd recoveryimage -j4
 
       - name: Upload Recovery Artifact
         uses: actions/upload-artifact@v4
