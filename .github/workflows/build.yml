@@ -41,34 +41,36 @@ jobs:
       - name: Build Recovery
         run: |
           cd ~/fox_R11.1
+          
+          # 1. Зачищаем старые vendorsetup
           find device/ -name "vendorsetup.sh" -delete || true
 
-          # 1. Жесткая регистрация в устройстве
-          mkdir -p device/xiaomi/lancelot
+          # 2. Правим пути в omni_lancelot.mk, чтобы сборщик не падал из-за отсутствия vendor/omni
+          sed -i 's|vendor/omni/config/common.mk|vendor/fox/config/common.mk|g' device/xiaomi/lancelot/omni_lancelot.mk || true
+
+          # 3. Перезаписываем AndroidProducts.mk с точным указанием makefile
           cat << 'EOF' > device/xiaomi/lancelot/AndroidProducts.mk
-          PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_lancelot.mk
-          COMMON_LUNCH_CHOICES := omni_lancelot-userdebug omni_lancelot-eng
+          PRODUCT_MAKEFILES := \
+              $(LOCAL_DIR)/omni_lancelot.mk
+
+          COMMON_LUNCH_CHOICES := \
+              omni_lancelot-userdebug \
+              omni_lancelot-eng
           EOF
 
-          # 2. Инициализируем окружение
+          # 4. Инициализируем envsetup
           source build/envsetup.sh
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
 
-          # 3. Насильно регистрируем файл через функцию из envsetup.sh
-          add_lunch_combo omni_lancelot-userdebug 2>/dev/null || true
-
-          # 4. Если lunch все еще капризничает — устанавливаем переменные напрямую в обход lunch!
+          # 5. Принудительный экспорт переменных в обход ошибок lunch
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
-          
-          lunch omni_lancelot-userdebug || {
-            echo "=== Включаем обходной путь lunch ==="
-            choosecombo 1 omni_lancelot 2
-          }
 
+          # 6. Запуск lunch и сборки
+          lunch omni_lancelot-userdebug || lunch omni_lancelot-eng || choosecombo 1 omni_lancelot 2
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
