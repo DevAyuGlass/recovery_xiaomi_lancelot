@@ -41,25 +41,19 @@ jobs:
       - name: Build Recovery
         run: |
           cd ~/fox_R11.1
-          
-          # 1. Удаляем все vendorsetup.sh, которые вызывают устаревший add_lunch_combo
           find device/ -name "vendorsetup.sh" -delete || true
 
-          # 2. Инициализируем окружение
+          # Регистрируем omni_lancelot напрямую в AndroidProducts.mk
+          echo "PRODUCT_MAKEFILES := \$(LOCAL_DIR)/omni_lancelot.mk" > device/xiaomi/lancelot/AndroidProducts.mk
+          echo "COMMON_LUNCH_CHOICES := omni_lancelot-userdebug omni_lancelot-eng" >> device/xiaomi/lancelot/AndroidProducts.mk
+
           source build/envsetup.sh
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
 
-          # 3. Смотрим, какие .mk файлы реально есть в нашем дереве lancelot
-          echo "=== Найденные конфиги в lancelot ==="
-          ls -la device/xiaomi/lancelot/
-
-          # 4. Выполняем lunch на один из существующих таргетов
-          lunch twrp_lancelot-userdebug || lunch fox_lancelot-userdebug || lunch omni_lancelot-userdebug || lunch $(lunch --help | grep lancelot | head -n1)
-
-          # 5. Запуск компиляции
+          lunch omni_lancelot-userdebug
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
