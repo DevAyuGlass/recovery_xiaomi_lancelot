@@ -42,35 +42,30 @@ jobs:
         run: |
           cd ~/fox_R11.1
           
-          # 1. Зачищаем старые vendorsetup
+          # 1. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
-
-          # 2. Правим пути в omni_lancelot.mk, чтобы сборщик не падал из-за отсутствия vendor/omni
+          
           sed -i 's|vendor/omni/config/common.mk|vendor/fox/config/common.mk|g' device/xiaomi/lancelot/omni_lancelot.mk || true
 
-          # 3. Перезаписываем AndroidProducts.mk с точным указанием makefile
           cat << 'EOF' > device/xiaomi/lancelot/AndroidProducts.mk
-          PRODUCT_MAKEFILES := \
-              $(LOCAL_DIR)/omni_lancelot.mk
-
-          COMMON_LUNCH_CHOICES := \
-              omni_lancelot-userdebug \
-              omni_lancelot-eng
+          PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_lancelot.mk
+          COMMON_LUNCH_CHOICES := omni_lancelot-userdebug
           EOF
 
-          # 4. Инициализируем envsetup
+          # 2. Подгружаем функции сборки
           source build/envsetup.sh
+
+          # 3. Настраиваем переменные напрямую в обход lunch!
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
 
-          # 5. Принудительный экспорт переменных в обход ошибок lunch
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
+          export TARGET_BUILD_TYPE=release
 
-          # 6. Запуск lunch и сборки
-          lunch omni_lancelot-userdebug || lunch omni_lancelot-eng || choosecombo 1 omni_lancelot 2
+          # 4. Запускаем напрямую сборку targets
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
