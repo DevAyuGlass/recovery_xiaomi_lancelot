@@ -43,17 +43,32 @@ jobs:
           cd ~/fox_R11.1
           find device/ -name "vendorsetup.sh" -delete || true
 
-          # Регистрируем omni_lancelot напрямую в AndroidProducts.mk
-          echo "PRODUCT_MAKEFILES := \$(LOCAL_DIR)/omni_lancelot.mk" > device/xiaomi/lancelot/AndroidProducts.mk
-          echo "COMMON_LUNCH_CHOICES := omni_lancelot-userdebug omni_lancelot-eng" >> device/xiaomi/lancelot/AndroidProducts.mk
+          # 1. Жесткая регистрация в устройстве
+          mkdir -p device/xiaomi/lancelot
+          cat << 'EOF' > device/xiaomi/lancelot/AndroidProducts.mk
+          PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_lancelot.mk
+          COMMON_LUNCH_CHOICES := omni_lancelot-userdebug omni_lancelot-eng
+          EOF
 
+          # 2. Инициализируем окружение
           source build/envsetup.sh
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
 
-          lunch omni_lancelot-userdebug
+          # 3. Насильно регистрируем файл через функцию из envsetup.sh
+          add_lunch_combo omni_lancelot-userdebug 2>/dev/null || true
+
+          # 4. Если lunch все еще капризничает — устанавливаем переменные напрямую в обход lunch!
+          export TARGET_PRODUCT=omni_lancelot
+          export TARGET_BUILD_VARIANT=userdebug
+          
+          lunch omni_lancelot-userdebug || {
+            echo "=== Включаем обходной путь lunch ==="
+            choosecombo 1 omni_lancelot 2
+          }
+
           mka recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
