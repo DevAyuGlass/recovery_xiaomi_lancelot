@@ -3,6 +3,10 @@ name: Build Si-Phone Recovery
 on:
   workflow_dispatch:
 
+env:
+  FOX_BRANCH: "12.1"
+  FOX_DIR: /home/runner/fox_12.1
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -13,67 +17,70 @@ jobs:
 
       - name: Cleanup Environment
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo apt-get update && sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32z1-dev libkrb5-dev libgl1-mesa-dev libxml2-utils xsltproc zlib1g-dev python3
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf lib32ncurses5-dev lib32z1-dev libkrb5-dev libgl1-mesa-dev libxml2-utils xsltproc zlib1g-dev python3 python-is-python3 rsync unzip zip
 
       - name: Install Repo Tool
         run: |
           mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Initialize OrangeFox Source
         run: |
-          mkdir -p ~/fox_R11.1
-          cd ~/fox_R11.1
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          repo init -u https://gitlab.com/OrangeFox/Manifest.git --depth=1
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch -j$(nproc)
+          git config --global color.ui false
+          cd ~
+          git clone https://gitlab.com/OrangeFox/sync.git --depth=1
+          cd sync
+          # Ветка 12.1: в ней нет release_config / trunk_staging
+          ./orangefox_sync.sh --branch $FOX_BRANCH --path $FOX_DIR
 
       - name: Import Device Tree
         run: |
-          cd ~/fox_R11.1
+          cd $FOX_DIR
           mkdir -p device/xiaomi/lancelot
-          cp -r $GITHUB_WORKSPACE/* device/xiaomi/lancelot/
+          rsync -a --exclude='.git' --exclude='.github' $GITHUB_WORKSPACE/ device/xiaomi/lancelot/
 
       - name: Build Recovery
         run: |
-          cd ~/fox_R11.1
+          cd $FOX_DIR
 
-          # 1. Вырезаем подключение release_config из главного config.mk
-          sed -i '/release_config.mk/d' build/make/core/config.mk || true
+          # Убираем vendorsetup, чтобы не плодить лишние lunch-комбо
+          find device/xiaomi/lancelot -name "vendorsetup.sh" -delete || true
 
-          # 2. Зачищаем vendorsetup и создаем AndroidProducts.mk
-          find device/ -name "vendorsetup.sh" -delete || true
-
-          sed -i 's|vendor/omni/config/common.mk|vendor/fox/config/common.mk|g' device/xiaomi/lancelot/omni_lancelot.mk || true
+          # Подставляем существующий common.mk (зависит от ветки)
+          MK=device/xiaomi/lancelot/omni_lancelot.mk
+          if [ -f vendor/twrp/config/common.mk ]; then
+            sed -i 's|vendor/omni/config/common.mk|vendor/twrp/config/common.mk|g' $MK
+          fi
 
           cat << 'EOF' > device/xiaomi/lancelot/AndroidProducts.mk
           PRODUCT_MAKEFILES := $(LOCAL_DIR)/omni_lancelot.mk
-          COMMON_LUNCH_CHOICES := omni_lancelot-userdebug
+          COMMON_LUNCH_CHOICES := omni_lancelot-eng omni_lancelot-userdebug
           EOF
 
-          # 3. Подгружаем функции сборки
-          source build/envsetup.sh
-
-          # 4. Переменные сборки
           export ALLOW_MISSING_DEPENDENCIES=true
+          export LC_ALL=C
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
           export TARGET_SCREEN_WIDTH=1080
-
-          export TARGET_PRODUCT=omni_lancelot
-          export TARGET_BUILD_VARIANT=userdebug
           export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
-          # 5. Запуск сборки
-          make recoveryimage -j$(nproc)
+          set +e
+          source build/envsetup.sh
+          set -e
+
+          lunch omni_lancelot-eng
+          mka adbd recoveryimage -j$(nproc)
+
       - name: Upload Recovery Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Si-Phone-Recovery-lancelot
           path: |
-            ~/fox_R11.1/out/target/product/lancelot/recovery.img
-            ~/fox_R11.1/out/target/product/lancelot/OrangeFox*.zip
+            /home/runner/fox_12.1/out/target/product/lancelot/recovery.img
+            /home/runner/fox_12.1/out/target/product/lancelot/OrangeFox*.zip
