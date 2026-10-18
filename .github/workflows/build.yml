@@ -42,6 +42,13 @@ jobs:
         run: |
           cd ~/fox_R11.1
           
+          # 0. СОЗДАЕМ ФЕЙКОВЫЙ КОНФИГ ДЛЯ ПАНИКУЮЩЕГО GO-СКРИПТА
+          mkdir -p build/release_configs
+          cat << 'EOF' > build/release_configs/trunk_staging.textproto
+          name: "trunk_staging"
+          inherits: []
+          EOF
+
           # 1. Зачищаем vendorsetup и создаем AndroidProducts.mk
           find device/ -name "vendorsetup.sh" -delete || true
           
@@ -55,7 +62,7 @@ jobs:
           # 2. Подгружаем функции сборки
           source build/envsetup.sh
 
-          # 3. Настраиваем переменные напрямую
+          # 3. Настройки OrangeFox и таргетов
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_USE_NANO_EDITOR=true
           export TARGET_SCREEN_HEIGHT=2340
@@ -63,14 +70,13 @@ jobs:
 
           export TARGET_PRODUCT=omni_lancelot
           export TARGET_BUILD_VARIANT=userdebug
-          export TARGET_BUILD_TYPE=release
 
-          # Фикс паники release_config (trunk_staging)
+          # 4. Явно задаем то, что она требует
           export TARGET_RELEASE=trunk_staging
-          export DISABLE_RELEASE_CONFIGS=true
+          export TEMPORARY_DISABLE_PATH_RESTRICTIONS=true
 
-          # 4. Запускаем сборку
-          mka recoveryimage -j$(nproc)
+          # 5. Запускаем сборку напрямую
+          make recoveryimage -j$(nproc)
 
       - name: Upload Recovery Artifact
         uses: actions/upload-artifact@v4
