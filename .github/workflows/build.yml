@@ -63,6 +63,12 @@ jobs:
           COMMON_LUNCH_CHOICES := omni_lancelot-eng omni_lancelot-userdebug
           EOF
 
+          # Яркость: OrangeFox 12.1 требует TW_MAX_BRIGHTNESS в дереве устройства
+          BC=device/xiaomi/lancelot/BoardConfig.mk
+          if ! grep -q "TW_MAX_BRIGHTNESS" $BC; then
+            printf '\n# Brightness (added by CI)\nTW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"\nTW_MAX_BRIGHTNESS := 2047\nTW_DEFAULT_BRIGHTNESS := 1200\n' >> $BC
+          fi
+
           export ALLOW_MISSING_DEPENDENCIES=true
           export LC_ALL=C
           export FOX_USE_NANO_EDITOR=true
