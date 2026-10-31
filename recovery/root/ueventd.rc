@@ -1,0 +1,8 @@
+# Ensure Linux input event devices are created in recovery.
+# The device tree's system/etc/ueventd.rc is not a substitute for the
+# recovery ramdisk's root ueventd configuration on all init versions.
+subsystem input
+    devname uevent_devpath
+    dirname /dev/input
+
+/dev/input/* 0660 root input
