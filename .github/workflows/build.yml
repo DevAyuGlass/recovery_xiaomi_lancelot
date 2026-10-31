@@ -2,6 +2,9 @@ name: Build Si-Phone Recovery
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - fix/ext4-data-fstab
 
 env:
   FOX_BRANCH: "12.1"
